@@ -22,4 +22,10 @@ class ReservationController(private val reservationService: ReservationService) 
             quantity = request.quantity
         )
     }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get reservation by ID")
+    fun getReservation(@PathVariable id: UUID): Reservation {
+        return reservationService.getReservation(id)
+    }
 }

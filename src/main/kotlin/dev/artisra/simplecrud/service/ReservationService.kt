@@ -41,4 +41,10 @@ class ReservationService(
             }
         }
     }
+
+    fun getReservation(id: UUID): Reservation {
+        return reservationRepository.findById(id).orElseThrow {
+            IllegalArgumentException("Reservation not found: $id")
+        }
+    }
 }

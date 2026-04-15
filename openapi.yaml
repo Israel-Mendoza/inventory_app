@@ -53,6 +53,26 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/Product"
+  /api/reservations/{id}:
+    get:
+      tags:
+      - Reservations
+      summary: Get reservation by ID
+      operationId: getReservation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Reservation"
   /api/products/{id}:
     get:
       tags:
