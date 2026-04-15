@@ -1,0 +1,185 @@
+openapi: 3.1.0
+info:
+  title: Simple CRUD API
+  description: Inventory and Reservation management system API
+  license:
+    name: Apache 2.0
+    url: http://springdoc.org
+  version: 1.0.0
+servers:
+- url: http://localhost
+  description: Generated server url
+tags:
+- name: Products
+  description: Product management endpoints
+- name: Reservations
+  description: Reservation management endpoints
+paths:
+  /api/reservations:
+    post:
+      tags:
+      - Reservations
+      summary: Create a reservation for a product
+      operationId: createReservation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReservationRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Reservation"
+  /api/products:
+    post:
+      tags:
+      - Products
+      summary: Create a new product
+      operationId: createProduct
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Product"
+  /api/products/{id}:
+    get:
+      tags:
+      - Products
+      summary: Get product by ID
+      operationId: getProduct
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Product"
+components:
+  schemas:
+    CreateReservationRequest:
+      type: object
+      description: Request to create a product reservation
+      properties:
+        productId:
+          type: string
+          format: uuid
+          description: UUID of the product to reserve
+        userId:
+          type: string
+          format: uuid
+          description: UUID of the user making the reservation
+        quantity:
+          type: integer
+          format: int32
+          description: Quantity of items to reserve
+          example: 5
+    Product:
+      type: object
+      description: Product entity
+      properties:
+        id:
+          type:
+          - string
+          - "null"
+          format: uuid
+          description: Unique identifier of the product
+          example: 550e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          description: Name of the product
+          example: Laptop
+        stock:
+          type: integer
+          format: int32
+          description: Current stock quantity
+          example: 50
+        version:
+          type: integer
+          format: int64
+          description: Optimistic locking version
+        createdAt:
+          type:
+          - string
+          - "null"
+          format: date-time
+          description: Timestamp when the product was created
+        updatedAt:
+          type:
+          - string
+          - "null"
+          format: date-time
+          description: Timestamp when the product was last updated
+    Reservation:
+      type: object
+      description: Product reservation entity
+      properties:
+        id:
+          type:
+          - string
+          - "null"
+          format: uuid
+          description: Unique identifier of the reservation
+        product:
+          $ref: "#/components/schemas/Product"
+          description: Product that is reserved
+        userId:
+          type: string
+          format: uuid
+          description: ID of the user who made the reservation
+        status:
+          type: string
+          description: Current status of the reservation
+          enum:
+          - PENDING
+          - CONFIRMED
+          - EXPIRED
+        createdAt:
+          type:
+          - string
+          - "null"
+          format: date-time
+          description: Timestamp when the reservation was created
+        updatedAt:
+          type:
+          - string
+          - "null"
+          format: date-time
+          description: Timestamp when the reservation was last updated
+        expiresAt:
+          type:
+          - string
+          - "null"
+          format: date-time
+          description: Timestamp when the reservation will expire
+    CreateProductRequest:
+      type: object
+      description: Request to create a new product
+      properties:
+        name:
+          type: string
+          description: Name of the product
+          example: Smartphone
+        stock:
+          type: integer
+          format: int32
+          description: Initial stock quantity
+          example: 100
