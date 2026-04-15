@@ -2,6 +2,7 @@ package dev.artisra.simplecrud.web
 
 import dev.artisra.simplecrud.domain.Product
 import dev.artisra.simplecrud.service.ProductService
+import dev.artisra.simplecrud.web.dto.CreateProductRequest
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
@@ -19,5 +20,3 @@ class ProductController(private val productService: ProductService) {
         return productService.getProduct(id)
     }
 }
-
-data class CreateProductRequest(val name: String, val stock: Int)

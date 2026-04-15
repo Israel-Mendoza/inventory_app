@@ -2,6 +2,7 @@ package dev.artisra.simplecrud.web
 
 import dev.artisra.simplecrud.domain.Reservation
 import dev.artisra.simplecrud.service.ReservationService
+import dev.artisra.simplecrud.web.dto.CreateReservationRequest
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
@@ -18,9 +19,3 @@ class ReservationController(private val reservationService: ReservationService) 
         )
     }
 }
-
-data class CreateReservationRequest(
-    val productId: UUID,
-    val userId: UUID,
-    val quantity: Int
-)

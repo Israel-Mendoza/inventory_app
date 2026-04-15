@@ -35,7 +35,3 @@ class Reservation(
     @Column(name = "expires_at")
     var expiresAt: OffsetDateTime? = null
 )
-
-enum class ReservationStatus {
-    PENDING, CONFIRMED, EXPIRED
-}
