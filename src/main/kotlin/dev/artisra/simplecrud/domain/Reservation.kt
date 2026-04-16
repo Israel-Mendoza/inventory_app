@@ -30,6 +30,10 @@ class Reservation(
     @Schema(description = "Current status of the reservation")
     var status: ReservationStatus = ReservationStatus.PENDING,
 
+    @Column(nullable = false)
+    @Schema(description = "Quantity of items reserved")
+    var quantity: Int = 1,
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     @Schema(description = "Timestamp when the reservation was created")

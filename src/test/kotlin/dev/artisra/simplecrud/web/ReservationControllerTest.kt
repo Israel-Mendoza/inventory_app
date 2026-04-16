@@ -10,10 +10,15 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.*
+import kotlinx.coroutines.runBlocking
+import org.mockito.Mockito.verify
 
 @WebMvcTest(ReservationController::class, GlobalExceptionHandler::class)
 class ReservationControllerTest {
@@ -25,6 +30,79 @@ class ReservationControllerTest {
     private lateinit var reservationService: ReservationService
 
     @Test
+    fun `should create a reservation`() {
+        runBlocking {
+            val productId = UUID.randomUUID()
+            val userId = UUID.randomUUID()
+            val quantity = 3
+            val product = Product(id = productId, name = "Reserved Product", stock = 7)
+            val reservation = Reservation(
+                id = UUID.randomUUID(),
+                product = product,
+                userId = userId,
+                status = ReservationStatus.PENDING,
+                quantity = quantity
+            )
+
+            `when`(reservationService.reserveProduct(productId, userId, quantity)).thenReturn(reservation)
+
+            val requestBody = """
+                {
+                    "productId": "$productId",
+                    "userId": "$userId",
+                    "quantity": $quantity
+                }
+            """.trimIndent()
+
+            val mvcResult = mockMvc.perform(
+                post("/api/reservations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestBody)
+            ).andReturn()
+
+            mockMvc.perform(asyncDispatch(mvcResult))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.userId").value(userId.toString()))
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.quantity").value(quantity))
+
+            verify(reservationService).reserveProduct(productId, userId, quantity)
+        }
+    }
+
+    @Test
+    fun `should return 409 when product is out of stock`() {
+        runBlocking {
+            val productId = UUID.randomUUID()
+            val userId = UUID.randomUUID()
+            val quantity = 100
+
+            `when`(reservationService.reserveProduct(productId, userId, quantity))
+                .thenThrow(IllegalStateException("Not enough stock for product: $productId"))
+
+            val requestBody = """
+                {
+                    "productId": "$productId",
+                    "userId": "$userId",
+                    "quantity": $quantity
+                }
+            """.trimIndent()
+
+            val mvcResult = mockMvc.perform(
+                post("/api/reservations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestBody)
+            ).andReturn()
+
+            mockMvc.perform(asyncDispatch(mvcResult))
+                .andExpect(status().isConflict)
+                .andExpect(jsonPath("$.error").value("Conflict"))
+                .andExpect(jsonPath("$.message").value("Not enough stock for product: $productId"))
+        }
+    }
+
+    @Test
     fun `should return reservation by ID`() {
         val reservationId = UUID.randomUUID()
         val productId = UUID.randomUUID()
@@ -34,7 +112,8 @@ class ReservationControllerTest {
             id = reservationId,
             product = product,
             userId = userId,
-            status = ReservationStatus.PENDING
+            status = ReservationStatus.PENDING,
+            quantity = 5
         )
 
         `when`(reservationService.getReservation(reservationId)).thenReturn(reservation)
@@ -44,6 +123,7 @@ class ReservationControllerTest {
             .andExpect(jsonPath("$.id").value(reservationId.toString()))
             .andExpect(jsonPath("$.userId").value(userId.toString()))
             .andExpect(jsonPath("$.status").value("PENDING"))
+            .andExpect(jsonPath("$.quantity").value(5))
     }
 
     @Test

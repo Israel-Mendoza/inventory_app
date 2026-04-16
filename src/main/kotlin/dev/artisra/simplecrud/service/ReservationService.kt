@@ -35,7 +35,8 @@ class ReservationService(
                 val reservation = Reservation(
                     product = product,
                     userId = userId,
-                    status = ReservationStatus.PENDING
+                    status = ReservationStatus.PENDING,
+                    quantity = quantity
                 )
                 reservationRepository.save(reservation)
             }
