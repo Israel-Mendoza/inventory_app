@@ -34,6 +34,46 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/Reservation"
+  /api/reservations/{id}/confirm:
+    post:
+      tags:
+      - Reservations
+      summary: "[Planned] Confirm a reservation"
+      operationId: confirmReservation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Reservation"
+  /api/reservations/{id}/cancel:
+    post:
+      tags:
+      - Reservations
+      summary: "[Planned] Cancel a reservation and recover stock"
+      operationId: cancelReservation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Reservation"
   /api/products:
     post:
       tags:
@@ -86,6 +126,36 @@ paths:
         schema:
           type: string
           format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Product"
+  /api/products/{id}/stock:
+    patch:
+      tags:
+      - Products
+      summary: "[Planned] Update product stock (restock/adjust)"
+      operationId: updateProductStock
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                adjustment:
+                  type: integer
+                  description: Amount to add (positive) or remove (negative) from stock
+                  example: 10
       responses:
         "200":
           description: OK
@@ -165,6 +235,11 @@ components:
           type: string
           format: uuid
           description: ID of the user who made the reservation
+        quantity:
+          type: integer
+          format: int32
+          description: Number of items reserved
+          example: 1
         status:
           type: string
           description: Current status of the reservation
@@ -172,6 +247,7 @@ components:
           - PENDING
           - CONFIRMED
           - EXPIRED
+          - CANCELLED
         createdAt:
           type:
           - string
