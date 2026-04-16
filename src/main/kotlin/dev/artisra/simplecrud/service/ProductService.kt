@@ -2,6 +2,8 @@ package dev.artisra.simplecrud.service
 
 import dev.artisra.simplecrud.domain.Product
 import dev.artisra.simplecrud.repository.ProductRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -31,5 +33,14 @@ class ProductService(private val productRepository: ProductRepository) {
 
         product.stock -= quantity
         return productRepository.save(product)
+    }
+
+    @Transactional
+    suspend fun increaseStock(id: UUID, quantity: Int): Product {
+        return withContext(Dispatchers.IO) {
+            val product = getProduct(id)
+            product.stock += quantity
+            productRepository.save(product)
+        }
     }
 }

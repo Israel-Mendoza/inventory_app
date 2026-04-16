@@ -56,6 +56,23 @@ class ReservationService(
         }
     }
 
+    suspend fun cancelReservation(reservationId: UUID): Reservation {
+        val reservation = getReservation(reservationId)
+        if (reservation.status != ReservationStatus.PENDING) {
+            logger.error("Reservation is not pending: $reservationId")
+            throw IllegalStateException("Reservation is not pending: $reservationId")
+        }
+
+        // Return items to stock
+        val lock = locks.computeIfAbsent(reservation.product.id!!) { Mutex() }
+
+        return lock.withLock {
+            productService.increaseStock(reservation.product.id!!, reservation.quantity)
+            reservation.status = ReservationStatus.CANCELLED
+            reservationRepository.save(reservation)
+        }
+    }
+
     suspend fun getReservation(id: UUID): Reservation {
         return withContext(Dispatchers.IO) {
             reservationRepository.findById(id).orElseThrow {
