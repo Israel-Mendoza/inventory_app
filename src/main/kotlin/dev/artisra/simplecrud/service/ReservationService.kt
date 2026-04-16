@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -43,9 +44,27 @@ class ReservationService(
         }
     }
 
-    fun getReservation(id: UUID): Reservation {
-        return reservationRepository.findById(id).orElseThrow {
-            IllegalArgumentException("Reservation not found: $id")
+    suspend fun confirmReservation(reservationId: UUID): Reservation {
+        val reservation = getReservation(reservationId)
+        if (reservation.status != ReservationStatus.PENDING) {
+            logger.error("Reservation is not pending: $reservationId")
+            throw IllegalStateException("Reservation is not pending: $reservationId")
         }
+        reservation.status = ReservationStatus.CONFIRMED
+        return withContext(Dispatchers.IO) {
+            reservationRepository.save(reservation)
+        }
+    }
+
+    suspend fun getReservation(id: UUID): Reservation {
+        return withContext(Dispatchers.IO) {
+            reservationRepository.findById(id).orElseThrow {
+                IllegalArgumentException("Reservation not found: $id")
+            }
+        }
+    }
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(ReservationService::class.java)
     }
 }

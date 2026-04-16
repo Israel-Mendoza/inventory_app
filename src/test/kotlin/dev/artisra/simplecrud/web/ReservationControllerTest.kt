@@ -63,6 +63,7 @@ class ReservationControllerTest {
             mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.productId").value(productId.toString()))
                 .andExpect(jsonPath("$.userId").value(userId.toString()))
                 .andExpect(jsonPath("$.status").value("PENDING"))
                 .andExpect(jsonPath("$.quantity").value(quantity))
@@ -116,11 +117,16 @@ class ReservationControllerTest {
             quantity = 5
         )
 
-        `when`(reservationService.getReservation(reservationId)).thenReturn(reservation)
+        runBlocking {
+            `when`(reservationService.getReservation(reservationId)).thenReturn(reservation)
+        }
 
-        mockMvc.perform(get("/api/reservations/$reservationId"))
+        val mvcResult = mockMvc.perform(get("/api/reservations/$reservationId")).andReturn()
+
+        mockMvc.perform(asyncDispatch(mvcResult))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(reservationId.toString()))
+            .andExpect(jsonPath("$.productId").value(productId.toString()))
             .andExpect(jsonPath("$.userId").value(userId.toString()))
             .andExpect(jsonPath("$.status").value("PENDING"))
             .andExpect(jsonPath("$.quantity").value(5))
@@ -129,10 +135,14 @@ class ReservationControllerTest {
     @Test
     fun `should return 404 when reservation not found`() {
         val reservationId = UUID.randomUUID()
-        `when`(reservationService.getReservation(reservationId))
-            .thenThrow(IllegalArgumentException("Reservation not found: $reservationId"))
+        runBlocking {
+            `when`(reservationService.getReservation(reservationId))
+                .thenThrow(IllegalArgumentException("Reservation not found: $reservationId"))
+        }
 
-        mockMvc.perform(get("/api/reservations/$reservationId"))
+        val mvcResult = mockMvc.perform(get("/api/reservations/$reservationId")).andReturn()
+
+        mockMvc.perform(asyncDispatch(mvcResult))
             .andExpect(status().isNotFound)
     }
 }

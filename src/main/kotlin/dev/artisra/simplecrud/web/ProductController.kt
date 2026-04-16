@@ -1,8 +1,9 @@
 package dev.artisra.simplecrud.web
 
-import dev.artisra.simplecrud.domain.Product
 import dev.artisra.simplecrud.service.ProductService
 import dev.artisra.simplecrud.web.dto.CreateProductRequest
+import dev.artisra.simplecrud.web.dto.ProductResponse
+import dev.artisra.simplecrud.web.dto.toProductResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.*
@@ -15,13 +16,13 @@ class ProductController(private val productService: ProductService) {
 
     @PostMapping
     @Operation(summary = "Create a new product")
-    fun createProduct(@RequestBody request: CreateProductRequest): Product {
-        return productService.createProduct(request.name, request.stock)
+    fun createProduct(@RequestBody request: CreateProductRequest): ProductResponse {
+        return productService.createProduct(request.name, request.stock).toProductResponse()
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get product by ID")
-    fun getProduct(@PathVariable id: UUID): Product {
-        return productService.getProduct(id)
+    fun getProduct(@PathVariable id: UUID): ProductResponse {
+        return productService.getProduct(id).toProductResponse()
     }
 }

@@ -1,7 +1,6 @@
 package dev.artisra.simplecrud.web.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
-import java.util.UUID
 
 @Schema(description = "Request to create a new product")
 data class CreateProductRequest(

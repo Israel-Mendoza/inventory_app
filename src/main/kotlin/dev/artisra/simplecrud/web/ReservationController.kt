@@ -1,8 +1,9 @@
 package dev.artisra.simplecrud.web
 
-import dev.artisra.simplecrud.domain.Reservation
 import dev.artisra.simplecrud.service.ReservationService
 import dev.artisra.simplecrud.web.dto.CreateReservationRequest
+import dev.artisra.simplecrud.web.dto.ReservationResponse
+import dev.artisra.simplecrud.web.dto.toReservationResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.*
@@ -15,17 +16,23 @@ class ReservationController(private val reservationService: ReservationService) 
 
     @PostMapping
     @Operation(summary = "Create a reservation for a product")
-    suspend fun createReservation(@RequestBody request: CreateReservationRequest): Reservation {
+    suspend fun createReservation(@RequestBody request: CreateReservationRequest): ReservationResponse {
         return reservationService.reserveProduct(
             productId = request.productId,
             userId = request.userId,
             quantity = request.quantity
-        )
+        ).toReservationResponse()
+    }
+
+    @PostMapping("/{id}/confirm")
+    @Operation(summary = "Confirm a reservation by ID")
+    suspend fun confirmReservation(@PathVariable id: UUID): ReservationResponse {
+        return reservationService.confirmReservation(id).toReservationResponse()
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get reservation by ID")
-    fun getReservation(@PathVariable id: UUID): Reservation {
-        return reservationService.getReservation(id)
+    suspend fun getReservation(@PathVariable id: UUID): ReservationResponse {
+        return reservationService.getReservation(id).toReservationResponse()
     }
 }
