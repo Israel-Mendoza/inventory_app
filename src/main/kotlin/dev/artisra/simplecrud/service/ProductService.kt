@@ -2,8 +2,6 @@ package dev.artisra.simplecrud.service
 
 import dev.artisra.simplecrud.domain.Product
 import dev.artisra.simplecrud.repository.ProductRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -24,6 +22,7 @@ class ProductService(private val productRepository: ProductRepository) {
 
     @Transactional
     fun deductStock(productId: UUID, quantity: Int): Product {
+        require(quantity > 0) { "Quantity must be positive" }
         val product = productRepository.findById(productId)
             .orElseThrow { IllegalArgumentException("Product not found: $productId") }
 
@@ -37,6 +36,7 @@ class ProductService(private val productRepository: ProductRepository) {
 
     @Transactional
     fun increaseStock(id: UUID, quantity: Int): Product {
+        require(quantity > 0) { "Quantity must be positive" }
         val product = getProduct(id)
         product.stock += quantity
         return productRepository.save(product)
