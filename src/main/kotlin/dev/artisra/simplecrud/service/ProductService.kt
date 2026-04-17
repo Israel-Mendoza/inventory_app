@@ -22,6 +22,7 @@ class ProductService(private val productRepository: ProductRepository) {
 
     @Transactional
     fun deductStock(productId: UUID, quantity: Int): Product {
+        require(quantity > 0) { "Quantity must be positive" }
         val product = productRepository.findById(productId)
             .orElseThrow { IllegalArgumentException("Product not found: $productId") }
 
@@ -30,6 +31,14 @@ class ProductService(private val productRepository: ProductRepository) {
         }
 
         product.stock -= quantity
+        return productRepository.save(product)
+    }
+
+    @Transactional
+    fun increaseStock(id: UUID, quantity: Int): Product {
+        require(quantity > 0) { "Quantity must be positive" }
+        val product = getProduct(id)
+        product.stock += quantity
         return productRepository.save(product)
     }
 }
