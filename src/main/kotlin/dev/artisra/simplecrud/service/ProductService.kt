@@ -36,11 +36,9 @@ class ProductService(private val productRepository: ProductRepository) {
     }
 
     @Transactional
-    suspend fun increaseStock(id: UUID, quantity: Int): Product {
-        return withContext(Dispatchers.IO) {
-            val product = getProduct(id)
-            product.stock += quantity
-            productRepository.save(product)
-        }
+    fun increaseStock(id: UUID, quantity: Int): Product {
+        val product = getProduct(id)
+        product.stock += quantity
+        return productRepository.save(product)
     }
 }
