@@ -83,9 +83,9 @@ class ReservationService(
                         throw IllegalStateException("Reservation is not pending: $reservationId")
                     }
 
-                    if (currentReservation.quantity < 0) {
-                        logger.error("Reservation quantity cannot be negative: $reservationId")
-                        throw IllegalStateException("Reservation quantity cannot be negative: $reservationId")
+                    if (currentReservation.quantity <= 0) {
+                        logger.error("Reservation quantity must be positive: $reservationId")
+                        throw IllegalStateException("Reservation quantity must be positive: $reservationId")
                     }
 
                     productService.increaseStock(currentReservation.product.id!!, currentReservation.quantity)
