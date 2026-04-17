@@ -49,7 +49,7 @@ class ReservationService(
     suspend fun confirmReservation(reservationId: UUID): Reservation {
         return withContext(Dispatchers.IO) {
             // Blocking operation but in IO context
-            val reservation = getReservation(reservationId)
+            val reservation = getReservationSync(reservationId)
             val lock = locks.computeIfAbsent(reservation.product.id!!) { Mutex() }
 
             lock.withLock {
@@ -71,7 +71,7 @@ class ReservationService(
     suspend fun cancelReservation(reservationId: UUID): Reservation {
         return withContext(Dispatchers.IO) {
             // Blocking operation but in IO context
-            val reservation = getReservation(reservationId)
+            val reservation = getReservationSync(reservationId)
             val lock = locks.computeIfAbsent(reservation.product.id!!) { Mutex() }
 
             lock.withLock {
