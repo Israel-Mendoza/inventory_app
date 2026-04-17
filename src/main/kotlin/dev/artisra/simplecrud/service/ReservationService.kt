@@ -26,8 +26,9 @@ class ReservationService(
         // Get or create a mutex for this specific product
         val lock = locks.computeIfAbsent(productId) { Mutex() }
 
-        return lock.withLock {
-            withContext(Dispatchers.IO) {
+        // Jumping to IO context before blocking operation
+        return withContext(Dispatchers.IO) {
+            lock.withLock {
                 // Blocking operation but in IO context
                 transactionTemplate.execute {
                     val product = productService.deductStock(productId, quantity)
