@@ -4,6 +4,7 @@ import dev.artisra.simplecrud.domain.Product
 import dev.artisra.simplecrud.domain.Reservation
 import dev.artisra.simplecrud.domain.ReservationStatus
 import dev.artisra.simplecrud.service.ReservationService
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired
@@ -20,6 +21,7 @@ import java.util.*
 import kotlinx.coroutines.runBlocking
 import org.mockito.Mockito.verify
 
+@Tag("unit")
 @WebMvcTest(ReservationController::class, GlobalExceptionHandler::class)
 class ReservationControllerTest {
 

@@ -2,6 +2,7 @@ package dev.artisra.simplecrud.web
 
 import dev.artisra.simplecrud.domain.Product
 import dev.artisra.simplecrud.service.ProductService
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
@@ -16,6 +17,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
 
+@Tag("unit")
 @WebMvcTest(ProductController::class, GlobalExceptionHandler::class)
 class ProductControllerTest {
 

@@ -4,6 +4,7 @@ import dev.artisra.simplecrud.service.ProductService
 import dev.artisra.simplecrud.service.ReservationService
 import kotlinx.coroutines.*
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -14,6 +15,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
+@Tag("integration")
 @SpringBootTest
 @Testcontainers
 class ConcurrencyTest {
