@@ -54,6 +54,26 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ReservationResponse"
+  /api/reservations/{id}/cancel:
+    post:
+      tags:
+      - Reservations
+      summary: Cancel a reservation by ID
+      operationId: cancelReservation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ReservationResponse"
   /api/products:
     post:
       tags:

@@ -145,4 +145,94 @@ class ReservationControllerTest {
         mockMvc.perform(asyncDispatch(mvcResult))
             .andExpect(status().isNotFound)
     }
+
+    @Test
+    fun `should cancel a reservation`() {
+        val reservationId = UUID.randomUUID()
+        val productId = UUID.randomUUID()
+        val userId = UUID.randomUUID()
+        val product = Product(id = productId, name = "Test Product", stock = 10)
+        val cancelledReservation = Reservation(
+            id = reservationId,
+            product = product,
+            userId = userId,
+            status = ReservationStatus.CANCELLED,
+            quantity = 5
+        )
+
+        runBlocking {
+            `when`(reservationService.cancelReservation(reservationId)).thenReturn(cancelledReservation)
+        }
+
+        val mvcResult = mockMvc.perform(post("/api/reservations/$reservationId/cancel")).andReturn()
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(reservationId.toString()))
+            .andExpect(jsonPath("$.status").value("CANCELLED"))
+
+        runBlocking {
+            verify(reservationService).cancelReservation(reservationId)
+        }
+    }
+
+    @Test
+    fun `should return 409 when cancelling a non-pending reservation`() {
+        val reservationId = UUID.randomUUID()
+        runBlocking {
+            `when`(reservationService.cancelReservation(reservationId))
+                .thenThrow(IllegalStateException("Reservation is not pending: $reservationId"))
+        }
+
+        val mvcResult = mockMvc.perform(post("/api/reservations/$reservationId/cancel")).andReturn()
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.message").value("Reservation is not pending: $reservationId"))
+    }
+
+    @Test
+    fun `should return 404 when cancelling a non-existent reservation`() {
+        val reservationId = UUID.randomUUID()
+        runBlocking {
+            `when`(reservationService.cancelReservation(reservationId))
+                .thenThrow(IllegalArgumentException("Reservation not found: $reservationId"))
+        }
+
+        val mvcResult = mockMvc.perform(post("/api/reservations/$reservationId/cancel")).andReturn()
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.message").value("Reservation not found: $reservationId"))
+    }
+
+    @Test
+    fun `should confirm a reservation`() {
+        val reservationId = UUID.randomUUID()
+        val productId = UUID.randomUUID()
+        val userId = UUID.randomUUID()
+        val product = Product(id = productId, name = "Test Product", stock = 10)
+        val confirmedReservation = Reservation(
+            id = reservationId,
+            product = product,
+            userId = userId,
+            status = ReservationStatus.CONFIRMED,
+            quantity = 5
+        )
+
+        runBlocking {
+            `when`(reservationService.confirmReservation(reservationId)).thenReturn(confirmedReservation)
+        }
+
+        val mvcResult = mockMvc.perform(post("/api/reservations/$reservationId/confirm")).andReturn()
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(reservationId.toString()))
+            .andExpect(jsonPath("$.status").value("CONFIRMED"))
+
+        runBlocking {
+            verify(reservationService).confirmReservation(reservationId)
+        }
+    }
 }
