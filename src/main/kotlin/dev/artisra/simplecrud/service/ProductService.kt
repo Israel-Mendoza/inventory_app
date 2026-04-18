@@ -2,12 +2,19 @@ package dev.artisra.simplecrud.service
 
 import dev.artisra.simplecrud.domain.Product
 import dev.artisra.simplecrud.repository.ProductRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import java.util.UUID
 
 @Service
-class ProductService(private val productRepository: ProductRepository) {
+class ProductService(
+    private val productRepository: ProductRepository,
+    private val productLockService: ProductLockService,
+    private val transactionTemplate: TransactionTemplate
+) {
 
     @Transactional
     fun createProduct(name: String, stock: Int): Product {
@@ -21,8 +28,7 @@ class ProductService(private val productRepository: ProductRepository) {
     }
 
     @Transactional
-    fun deductStock(productId: UUID, quantity: Int): Product {
-        require(quantity > 0) { "Quantity must be positive" }
+    internal fun deductStockInternal(productId: UUID, quantity: Int): Product {
         val product = productRepository.findById(productId)
             .orElseThrow { IllegalArgumentException("Product not found: $productId") }
 
@@ -34,11 +40,35 @@ class ProductService(private val productRepository: ProductRepository) {
         return productRepository.save(product)
     }
 
-    @Transactional
-    fun increaseStock(id: UUID, quantity: Int): Product {
+    // For external use, with transaction and locking
+    suspend fun deductStock(productId: UUID, quantity: Int): Product {
         require(quantity > 0) { "Quantity must be positive" }
+
+        return productLockService.withLock(productId) {
+            withContext(Dispatchers.IO) {
+                transactionTemplate.execute {
+                    deductStockInternal(productId, quantity)
+                }!!
+            }
+        }
+    }
+
+    @Transactional
+    internal fun increaseStockInternal(id: UUID, quantity: Int): Product {
         val product = getProduct(id)
         product.stock += quantity
         return productRepository.save(product)
+    }
+
+    suspend fun increaseStock(id: UUID, quantity: Int): Product {
+        require(quantity > 0) { "Quantity must be positive" }
+        
+        return productLockService.withLock(id) {
+            withContext(Dispatchers.IO) {
+                transactionTemplate.execute {
+                    increaseStockInternal(id, quantity)
+                }!!
+            }
+        }
     }
 }

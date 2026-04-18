@@ -25,4 +25,10 @@ class ProductController(private val productService: ProductService) {
     fun getProduct(@PathVariable id: UUID): ProductResponse {
         return productService.getProduct(id).toProductResponse()
     }
+
+    @PostMapping("/{id}/stock/increase")
+    @Operation(summary = "Increase stock for a product by ID")
+    suspend fun increaseStock(@PathVariable id: UUID, @RequestParam amount: Int): ProductResponse {
+        return productService.increaseStock(id, amount).toProductResponse()
+    }
 }

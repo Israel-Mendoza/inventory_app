@@ -13,9 +13,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
+import kotlinx.coroutines.runBlocking
 
 @Tag("unit")
 @WebMvcTest(ProductController::class, GlobalExceptionHandler::class)
@@ -83,6 +86,30 @@ class ProductControllerTest {
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$.error").value("Not Found"))
             .andExpect(jsonPath("$.message").value("Product not found: $productId"))
+    }
+
+    @Test
+    fun `should increase product stock`() {
+        val productId = UUID.randomUUID()
+        val product = Product(id = productId, name = "Widget", stock = 20, version = 1)
+
+        runBlocking {
+            `when`(productService.increaseStock(productId, 5)).thenReturn(product)
+        }
+
+        val mvcResult = mockMvc.perform(
+            post("/api/products/$productId/stock/increase")
+                .param("amount", "5")
+        ).andReturn()
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(productId.toString()))
+            .andExpect(jsonPath("$.stock").value(20))
+
+        runBlocking {
+            verify(productService).increaseStock(productId, 5)
+        }
     }
 }
 

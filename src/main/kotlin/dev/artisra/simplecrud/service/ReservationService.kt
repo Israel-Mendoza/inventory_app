@@ -16,27 +16,16 @@ import java.util.UUID
 class ReservationService(
     private val productService: ProductService,
     private val reservationRepository: ReservationRepository,
-    private val transactionTemplate: TransactionTemplate
+    private val transactionTemplate: TransactionTemplate,
+    private val productLockService: ProductLockService
 ) {
-    // Striped locking: fixed array of mutexes to avoid memory leaks
-    private val lockStripes = 64
-    private val locks = Array(lockStripes) { Mutex() }
-
-    private fun getLockForProduct(productId: UUID): Mutex {
-        val index = (productId.hashCode() and Int.MAX_VALUE) % lockStripes
-        return locks[index]
-    }
 
     suspend fun reserveProduct(productId: UUID, userId: UUID, quantity: Int): Reservation {
-        // Get a mutex from the stripe for this specific product
-        val lock = getLockForProduct(productId)
-
-        // Jumping to IO context before blocking operation
-        return withContext(Dispatchers.IO) {
-            lock.withLock {
-                // Blocking operation but in IO context
+        return productLockService.withLock(productId) {
+            withContext(Dispatchers.IO) {
                 transactionTemplate.execute {
-                    val product = productService.deductStock(productId, quantity)
+                    // Call non-locking internal method within the transaction
+                    val product = productService.deductStockInternal(productId, quantity)
 
                     // Create reservation
                     val reservation = Reservation(
@@ -46,18 +35,17 @@ class ReservationService(
                         quantity = quantity
                     )
                     reservationRepository.save(reservation)
-                }
+                }!!
             }
         }
     }
 
     suspend fun confirmReservation(reservationId: UUID): Reservation {
-        return withContext(Dispatchers.IO) {
-            // Blocking operation but in IO context
-            val reservation = getReservationSync(reservationId)
-            val lock = getLockForProduct(reservation.product.id!!)
-
-            lock.withLock {
+        val reservation = getReservation(reservationId)
+        val productId = reservation.product.id!!
+        
+        return productLockService.withLock(productId) {
+            withContext(Dispatchers.IO) {
                 transactionTemplate.execute {
                     val currentReservation = getReservationSync(reservationId)
 
@@ -68,18 +56,17 @@ class ReservationService(
 
                     currentReservation.status = ReservationStatus.CONFIRMED
                     reservationRepository.save(currentReservation)
-                }
+                }!!
             }
         }
     }
 
     suspend fun cancelReservation(reservationId: UUID): Reservation {
-        return withContext(Dispatchers.IO) {
-            // Blocking operation but in IO context
-            val reservation = getReservationSync(reservationId)
-            val lock = getLockForProduct(reservation.product.id!!)
+        val reservation = getReservation(reservationId)
+        val productId = reservation.product.id!!
 
-            lock.withLock {
+        return productLockService.withLock(productId) {
+            withContext(Dispatchers.IO) {
                 transactionTemplate.execute {
                     val currentReservation = getReservationSync(reservationId)
 
@@ -93,10 +80,12 @@ class ReservationService(
                         throw IllegalStateException("Reservation quantity must be positive: $reservationId")
                     }
 
-                    productService.increaseStock(currentReservation.product.id!!, currentReservation.quantity)
+                    // Call non-locking internal method within the transaction
+                    productService.increaseStockInternal(productId, currentReservation.quantity)
+                    
                     currentReservation.status = ReservationStatus.CANCELLED
                     reservationRepository.save(currentReservation)
-                }
+                }!!
             }
         }
     }
