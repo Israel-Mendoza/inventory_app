@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class ReservationService(
@@ -19,12 +18,18 @@ class ReservationService(
     private val reservationRepository: ReservationRepository,
     private val transactionTemplate: TransactionTemplate
 ) {
-    // Striped locking: one mutex per product ID
-    private val locks = ConcurrentHashMap<UUID, Mutex>()
+    // Striped locking: fixed array of mutexes to avoid memory leaks
+    private val lockStripes = 64
+    private val locks = Array(lockStripes) { Mutex() }
+
+    private fun getLockForProduct(productId: UUID): Mutex {
+        val index = (productId.hashCode() and Int.MAX_VALUE) % lockStripes
+        return locks[index]
+    }
 
     suspend fun reserveProduct(productId: UUID, userId: UUID, quantity: Int): Reservation {
-        // Get or create a mutex for this specific product
-        val lock = locks.computeIfAbsent(productId) { Mutex() }
+        // Get a mutex from the stripe for this specific product
+        val lock = getLockForProduct(productId)
 
         // Jumping to IO context before blocking operation
         return withContext(Dispatchers.IO) {
@@ -50,7 +55,7 @@ class ReservationService(
         return withContext(Dispatchers.IO) {
             // Blocking operation but in IO context
             val reservation = getReservationSync(reservationId)
-            val lock = locks.computeIfAbsent(reservation.product.id!!) { Mutex() }
+            val lock = getLockForProduct(reservation.product.id!!)
 
             lock.withLock {
                 transactionTemplate.execute {
@@ -72,7 +77,7 @@ class ReservationService(
         return withContext(Dispatchers.IO) {
             // Blocking operation but in IO context
             val reservation = getReservationSync(reservationId)
-            val lock = locks.computeIfAbsent(reservation.product.id!!) { Mutex() }
+            val lock = getLockForProduct(reservation.product.id!!)
 
             lock.withLock {
                 transactionTemplate.execute {

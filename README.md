@@ -3,10 +3,11 @@
 A simple CRUD application built with **Kotlin**, **Spring Boot**, and **Coroutines** to demonstrate advanced concurrency patterns in a real-world scenario: a Flash Sale reservation system.
 
 ## Core Concurrency Patterns
-- **Striped Locking**: Uses `ConcurrentHashMap<UUID, Mutex>` to ensure thread safety per product without blocking the entire service.
+- **Striped Locking**: Uses a fixed-size `Array<Mutex>` (64 stripes) to map product IDs to locks, ensuring thread safety per product while avoiding memory leaks associated with unbounded maps.
 - **Optimistic Locking**: Leverages JPA `@Version` as a secondary safety net at the database level.
 - **Structured Concurrency**: Utilizes Kotlin Coroutines (`suspend` functions, `withLock`, `Dispatchers.IO`) for efficient asynchronous processing.
 - **Virtual Threads**: Enabled (Java 25) to handle high-throughput blocking I/O.
+- **Atomic Operations**: Business logic is wrapped in Spring `TransactionTemplate` to ensure ACID properties during stock updates and reservation creation.
 
 ## Prerequisites
 - **Java 25**
@@ -59,6 +60,21 @@ curl -X POST http://localhost:8080/api/reservations \
   "userId": "{user-uuid}",
   "quantity": 1
 }'
+```
+
+### Confirm a Reservation
+```bash
+curl -X POST http://localhost:8080/api/reservations/{reservation-uuid}/confirm
+```
+
+### Cancel a Reservation
+```bash
+curl -X POST http://localhost:8080/api/reservations/{reservation-uuid}/cancel
+```
+
+### Get Reservation Details
+```bash
+curl http://localhost:8080/api/reservations/{reservation-uuid}
 ```
 
 ## Database Schema
