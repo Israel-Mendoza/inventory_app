@@ -35,7 +35,7 @@ class ConcurrencyTest {
     @Test
     fun `should handle concurrent reservations correctly`() = runBlocking {
         // Given: A product with 10 items in stock
-        val product = productService.createProduct("Flash Sale Item", 10)
+        val product = productService.createProduct("Flash Sale Item", 10, 0)
         val productId = product.id!!
 
         // When: 100 concurrent reservation requests are made
@@ -67,7 +67,7 @@ class ConcurrencyTest {
     fun `should handle concurrent cancellations correctly`() = runBlocking {
         // Given: A product with 20 items in stock
         val initialStock = 20
-        val product = productService.createProduct("Cancellable Item", initialStock)
+        val product = productService.createProduct("Cancellable Item", initialStock, 0)
         val productId = product.id!!
 
         // Create 20 reservations
@@ -105,7 +105,7 @@ class ConcurrencyTest {
     fun `should handle mixed concurrent reservations and cancellations`() = runBlocking {
         // Given: A product with 10 items in stock
         val initialStock = 10
-        val product = productService.createProduct("Mixed Workload Item", initialStock)
+        val product = productService.createProduct("Mixed Workload Item", initialStock, 0)
         val productId = product.id!!
 
         // Create 5 initial reservations

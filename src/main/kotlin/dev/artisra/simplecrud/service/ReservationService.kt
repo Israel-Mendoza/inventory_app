@@ -4,12 +4,12 @@ import dev.artisra.simplecrud.domain.Reservation
 import dev.artisra.simplecrud.domain.ReservationStatus
 import dev.artisra.simplecrud.repository.ReservationRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionTemplate
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Service
@@ -17,7 +17,9 @@ class ReservationService(
     private val productService: ProductService,
     private val reservationRepository: ReservationRepository,
     private val transactionTemplate: TransactionTemplate,
-    private val productLockService: ProductLockService
+    private val productLockService: ProductLockService,
+    @Value("\${reservation.expiration.minutes:1440}")
+    private val defaultExpirationInMinutes: Int
 ) {
 
     suspend fun reserveProduct(productId: UUID, userId: UUID, quantity: Int): Reservation {
@@ -26,13 +28,15 @@ class ReservationService(
                 transactionTemplate.execute {
                     // Call non-locking internal method within the transaction
                     val product = productService.deductStockInternal(productId, quantity)
+                    val expirationInMinutes = if (product.expirationMinutes > 0) product.expirationMinutes else defaultExpirationInMinutes
 
                     // Create reservation
                     val reservation = Reservation(
                         product = product,
                         userId = userId,
                         status = ReservationStatus.PENDING,
-                        quantity = quantity
+                        quantity = quantity,
+                        expiresAt = OffsetDateTime.now().plusMinutes(expirationInMinutes.toLong())
                     )
                     reservationRepository.save(reservation)
                 }

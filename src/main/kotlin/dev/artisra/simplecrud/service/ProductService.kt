@@ -4,6 +4,7 @@ import dev.artisra.simplecrud.domain.Product
 import dev.artisra.simplecrud.repository.ProductRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
@@ -17,8 +18,9 @@ class ProductService(
 ) {
 
     @Transactional
-    fun createProduct(name: String, stock: Int): Product {
-        return productRepository.save(Product(name = name, stock = stock))
+    fun createProduct(name: String, stock: Int, expirationMinutes: Int): Product {
+        log.info("Creating product: $name, Stock: $stock, Expiration: $expirationMinutes")
+        return productRepository.save(Product(name = name, stock = stock, expirationMinutes = expirationMinutes))
     }
 
     @Transactional
@@ -70,5 +72,9 @@ class ProductService(
                 }!!
             }
         }
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(ProductService::class.java)
     }
 }

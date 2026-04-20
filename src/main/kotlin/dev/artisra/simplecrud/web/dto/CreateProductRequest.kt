@@ -7,5 +7,7 @@ data class CreateProductRequest(
     @Schema(description = "Name of the product", example = "Smartphone")
     val name: String,
     @Schema(description = "Initial stock quantity", example = "100")
-    val stock: Int
+    val stock: Int,
+    @Schema(description = "Expiration offset in minutes for product reservations", example = "1440")
+    val expirationMinutes: Int = 0
 )

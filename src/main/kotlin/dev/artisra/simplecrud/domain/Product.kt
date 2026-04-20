@@ -37,5 +37,9 @@ class Product(
     @UpdateTimestamp
     @Column(name = "updated_at")
     @Schema(description = "Timestamp when the product was last updated")
-    val updatedAt: OffsetDateTime? = null
+    val updatedAt: OffsetDateTime? = null,
+
+    @Column(name = "expiration_offset_in_minutes", nullable = false)
+    @Schema(description = "Expiration offset in minutes for product reservations", example = "1440")
+    val expirationMinutes: Int = 0
 )

@@ -18,7 +18,9 @@ data class ProductResponse(
     @Schema(description = "Timestamp when the product was created")
     val createdAt: OffsetDateTime?,
     @Schema(description = "Timestamp when the product was last updated")
-    val updatedAt: OffsetDateTime?
+    val updatedAt: OffsetDateTime?,
+    @Schema(description = "Expiration offset in minutes for product reservations", example = "1440")
+    val expirationMinutes: Int
 )
 
 fun Product.toProductResponse(): ProductResponse {
@@ -28,7 +30,8 @@ fun Product.toProductResponse(): ProductResponse {
         stock = stock,
         version = version,
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        expirationMinutes = expirationMinutes
     )
 }
 

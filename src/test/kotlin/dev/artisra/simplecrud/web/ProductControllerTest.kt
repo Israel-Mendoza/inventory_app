@@ -33,14 +33,15 @@ class ProductControllerTest {
     @Test
     fun `should create a product`() {
         val productId = UUID.randomUUID()
-        val product = Product(id = productId, name = "Smartphone", stock = 100, version = 0)
+        val product = Product(id = productId, name = "Smartphone", stock = 100, version = 0, expirationMinutes = 60)
 
-        `when`(productService.createProduct("Smartphone", 100)).thenReturn(product)
+        `when`(productService.createProduct("Smartphone", 100, 60)).thenReturn(product)
 
         val requestBody = """
             {
                 "name": "Smartphone",
-                "stock": 100
+                "stock": 100,
+                "expirationMinutes": 60
             }
         """.trimIndent()
 
@@ -54,8 +55,9 @@ class ProductControllerTest {
             .andExpect(jsonPath("$.name").value("Smartphone"))
             .andExpect(jsonPath("$.stock").value(100))
             .andExpect(jsonPath("$.version").value(0))
+            .andExpect(jsonPath("$.expirationMinutes").value(60))
 
-        verify(productService).createProduct("Smartphone", 100)
+        verify(productService).createProduct("Smartphone", 100, 60)
     }
 
     @Test
@@ -73,6 +75,31 @@ class ProductControllerTest {
             .andExpect(jsonPath("$.version").value(2))
 
         verify(productService).getProduct(productId)
+    }
+
+    @Test
+    fun `should create a product with default expiration when not provided`() {
+        val productId = UUID.randomUUID()
+        val product = Product(id = productId, name = "Tablet", stock = 50, version = 0, expirationMinutes = 0)
+
+        `when`(productService.createProduct("Tablet", 50, 0)).thenReturn(product)
+
+        val requestBody = """
+            {
+                "name": "Tablet",
+                "stock": 50
+            }
+        """.trimIndent()
+
+        mockMvc.perform(
+            post("/api/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody)
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.expirationMinutes").value(0))
+
+        verify(productService).createProduct("Tablet", 50, 0)
     }
 
     @Test

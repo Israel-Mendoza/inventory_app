@@ -257,6 +257,11 @@ components:
           format: int32
           description: Initial stock quantity
           example: 100
+        expirationMinutes:
+          type: integer
+          format: int32
+          description: Expiration offset in minutes for product reservations
+          example: 1440
     ProductResponse:
       type: object
       description: Product response payload
@@ -290,3 +295,8 @@ components:
           - "null"
           format: date-time
           description: Timestamp when the product was last updated
+        expirationMinutes:
+          type: integer
+          format: int32
+          description: Expiration offset in minutes for product reservations
+          example: 1440

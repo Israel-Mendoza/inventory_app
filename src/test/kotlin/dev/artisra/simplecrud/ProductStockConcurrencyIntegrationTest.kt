@@ -36,7 +36,7 @@ class ProductStockConcurrencyIntegrationTest {
     fun `should handle concurrent expirations correctly`() = runBlocking {
         // Given: A product with initial stock
         val initialStock = 10
-        val product = productService.createProduct("Expiration Test Item", initialStock)
+        val product = productService.createProduct("Expiration Test Item", initialStock, 0)
         val productId = product.id!!
         val userId = UUID.randomUUID()
 

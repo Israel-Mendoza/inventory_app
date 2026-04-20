@@ -6,6 +6,7 @@ import dev.artisra.simplecrud.web.dto.ProductResponse
 import dev.artisra.simplecrud.web.dto.toProductResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
@@ -17,7 +18,8 @@ class ProductController(private val productService: ProductService) {
     @PostMapping
     @Operation(summary = "Create a new product")
     fun createProduct(@RequestBody request: CreateProductRequest): ProductResponse {
-        return productService.createProduct(request.name, request.stock).toProductResponse()
+        log.info("Creating product: {}", request)
+        return productService.createProduct(request.name, request.stock, request.expirationMinutes).toProductResponse()
     }
 
     @GetMapping("/{id}")
@@ -30,5 +32,9 @@ class ProductController(private val productService: ProductService) {
     @Operation(summary = "Increase stock for a product by ID")
     suspend fun increaseStock(@PathVariable id: UUID, @RequestParam amount: Int): ProductResponse {
         return productService.increaseStock(id, amount).toProductResponse()
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(ProductController::class.java)
     }
 }
