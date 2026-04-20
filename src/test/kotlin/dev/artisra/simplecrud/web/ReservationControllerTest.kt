@@ -237,4 +237,34 @@ class ReservationControllerTest {
             verify(reservationService).confirmReservation(reservationId)
         }
     }
+
+    @Test
+    fun `should expire a reservation`() {
+        val reservationId = UUID.randomUUID()
+        val productId = UUID.randomUUID()
+        val userId = UUID.randomUUID()
+        val product = Product(id = productId, name = "Test Product", stock = 10)
+        val expiredReservation = Reservation(
+            id = reservationId,
+            product = product,
+            userId = userId,
+            status = ReservationStatus.EXPIRED,
+            quantity = 5
+        )
+
+        runBlocking {
+            `when`(reservationService.expireReservation(reservationId)).thenReturn(expiredReservation)
+        }
+
+        val mvcResult = mockMvc.perform(post("/api/reservations/$reservationId/expire")).andReturn()
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(reservationId.toString()))
+            .andExpect(jsonPath("$.status").value("EXPIRED"))
+
+        runBlocking {
+            verify(reservationService).expireReservation(reservationId)
+        }
+    }
 }

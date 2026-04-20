@@ -36,6 +36,12 @@ class ReservationController(private val reservationService: ReservationService) 
         return reservationService.cancelReservation(id).toReservationResponse()
     }
 
+    @PostMapping("/{id}/expire")
+    @Operation(summary = "Expire a reservation by ID")
+    suspend fun expireReservation(@PathVariable id: UUID): ReservationResponse {
+        return reservationService.expireReservation(id).toReservationResponse()
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get reservation by ID")
     suspend fun getReservation(@PathVariable id: UUID): ReservationResponse {

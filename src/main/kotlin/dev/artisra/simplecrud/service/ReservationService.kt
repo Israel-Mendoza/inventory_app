@@ -35,7 +35,7 @@ class ReservationService(
                         quantity = quantity
                     )
                     reservationRepository.save(reservation)
-                }!!
+                }
             }
         }
     }
@@ -56,7 +56,7 @@ class ReservationService(
 
                     currentReservation.status = ReservationStatus.CONFIRMED
                     reservationRepository.save(currentReservation)
-                }!!
+                }
             }
         }
     }
@@ -85,7 +85,36 @@ class ReservationService(
                     
                     currentReservation.status = ReservationStatus.CANCELLED
                     reservationRepository.save(currentReservation)
-                }!!
+                }
+            }
+        }
+    }
+
+    suspend fun expireReservation(reservationId: UUID): Reservation {
+        val reservation = getReservation(reservationId)
+        val productId = reservation.product.id!!
+
+        return productLockService.withLock(productId) {
+            withContext(Dispatchers.IO) {
+                transactionTemplate.execute {
+                    val currentReservation = getReservationSync(reservationId)
+
+                    if (currentReservation.status != ReservationStatus.PENDING) {
+                        logger.error("Reservation is not pending: $reservationId")
+                        throw IllegalStateException("Reservation is not pending: $reservationId")
+                    }
+
+                    if (currentReservation.quantity <= 0) {
+                        logger.error("Reservation quantity must be positive: $reservationId")
+                        throw IllegalStateException("Reservation quantity must be positive: $reservationId")
+                    }
+
+                    // Call non-locking internal method within the transaction
+                    productService.increaseStockInternal(productId, currentReservation.quantity)
+
+                    currentReservation.status = ReservationStatus.EXPIRED
+                    reservationRepository.save(currentReservation)
+                }
             }
         }
     }

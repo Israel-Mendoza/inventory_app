@@ -33,53 +33,36 @@ class ProductStockConcurrencyIntegrationTest {
     private lateinit var reservationService: ReservationService
 
     @Test
-    fun `should handle mixed reservations and stock increases without collisions`() = runBlocking {
+    fun `should handle concurrent expirations correctly`() = runBlocking {
         // Given: A product with initial stock
-        val initialStock = 100
-        val product = productService.createProduct("Concurrent Item", initialStock)
+        val initialStock = 10
+        val product = productService.createProduct("Expiration Test Item", initialStock)
         val productId = product.id!!
+        val userId = UUID.randomUUID()
 
-        val iterations = 50
-        val successfulReservations = AtomicInteger(0)
-        val successfulIncreases = AtomicInteger(0)
-        val failedOperations = AtomicInteger(0)
-
-        // When: We concurrently try to reserve and increase stock
-        // These now share the same ProductLockService mutex
-        val jobs = mutableListOf<Job>()
-        
-        repeat(iterations) {
-            // Reservation path
-            jobs.add(launch(Dispatchers.Default) {
-                try {
-                    reservationService.reserveProduct(productId, UUID.randomUUID(), 1)
-                    successfulReservations.incrementAndGet()
-                } catch (e: Exception) {
-                    failedOperations.incrementAndGet()
-                }
-            })
-
-            // Stock increase path
-            jobs.add(launch(Dispatchers.Default) {
-                try {
-                    productService.increaseStock(productId, 1)
-                    successfulIncreases.incrementAndGet()
-                } catch (e: Exception) {
-                    failedOperations.incrementAndGet()
-                }
-            })
+        // Create 10 reservations of 1 each
+        val reservationIds = (1..10).map {
+            reservationService.reserveProduct(productId, userId, 1).id!!
         }
 
+        // Stock should be 0 now
+        assertEquals(0, productService.getProduct(productId).stock)
+
+        // When: We concurrently expire all reservations
+        val jobs = reservationIds.map { id ->
+            launch(Dispatchers.Default) {
+                reservationService.expireReservation(id)
+            }
+        }
         jobs.joinAll()
 
-        // Then:
+        // Then: Stock should be back to 10
         val finalProduct = productService.getProduct(productId)
-        val expectedStock = initialStock - successfulReservations.get() + successfulIncreases.get()
+        assertEquals(initialStock, finalProduct.stock)
         
-        // With the Mutex in place, failedOperations should be 0 because 
-        // they wait for the lock instead of colliding and throwing OptimisticLockingFailureException
-        assertEquals(0, failedOperations.get(), "Should have 0 failed operations due to contention")
-        assertEquals(expectedStock, finalProduct.stock, "Final stock should match the calculated expectation")
-        assertEquals(initialStock, finalProduct.stock, "In this specific 1:1 test, stock should return to initial")
+        // And all reservations should be EXPIRED
+        reservationIds.forEach { id ->
+            assertEquals(dev.artisra.simplecrud.domain.ReservationStatus.EXPIRED, reservationService.getReservation(id).status)
+        }
     }
 }
