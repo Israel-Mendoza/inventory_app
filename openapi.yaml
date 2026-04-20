@@ -34,26 +34,6 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ReservationResponse"
-  /api/reservations/{id}/expire:
-    post:
-      tags:
-      - Reservations
-      summary: Expire a reservation by ID
-      operationId: expireReservation
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ReservationResponse"
   /api/reservations/{id}/confirm:
     post:
       tags:
@@ -94,6 +74,15 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ReservationResponse"
+  /api/reservations/trigger-cleanup:
+    post:
+      tags:
+      - Reservations
+      summary: Trigger manual reservation cleanup task
+      operationId: triggerCleanup
+      responses:
+        "200":
+          description: OK
   /api/products:
     post:
       tags:

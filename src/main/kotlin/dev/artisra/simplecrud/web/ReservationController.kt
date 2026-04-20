@@ -1,5 +1,6 @@
 package dev.artisra.simplecrud.web
 
+import dev.artisra.simplecrud.service.ReservationCleanupTask
 import dev.artisra.simplecrud.service.ReservationService
 import dev.artisra.simplecrud.web.dto.CreateReservationRequest
 import dev.artisra.simplecrud.web.dto.ReservationResponse
@@ -12,7 +13,10 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/reservations")
 @Tag(name = "Reservations", description = "Reservation management endpoints")
-class ReservationController(private val reservationService: ReservationService) {
+class ReservationController(
+    private val reservationService: ReservationService,
+    private val reservationCleanupTask: ReservationCleanupTask
+) {
 
     @PostMapping
     @Operation(summary = "Create a reservation for a product")
@@ -36,10 +40,10 @@ class ReservationController(private val reservationService: ReservationService) 
         return reservationService.cancelReservation(id).toReservationResponse()
     }
 
-    @PostMapping("/{id}/expire")
-    @Operation(summary = "Expire a reservation by ID")
-    suspend fun expireReservation(@PathVariable id: UUID): ReservationResponse {
-        return reservationService.expireReservation(id).toReservationResponse()
+    @PostMapping("/trigger-cleanup")
+    @Operation(summary = "Trigger manual reservation cleanup task")
+    fun triggerCleanup() {
+        reservationCleanupTask.cleanupExpiredReservations()
     }
 
     @GetMapping("/{id}")

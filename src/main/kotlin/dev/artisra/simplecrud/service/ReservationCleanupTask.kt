@@ -14,6 +14,10 @@ class ReservationCleanupTask(
     private val reservationService: ReservationService
 ) {
     @Scheduled(fixedRateString = "\${reservation.cleanup.fixed-rate-ms}")
+    fun scheduledCleanup() {
+        cleanupExpiredReservations()
+    }
+
     fun cleanupExpiredReservations() {
         logger.info("Running reservation cleanup task")
         val now = OffsetDateTime.now()

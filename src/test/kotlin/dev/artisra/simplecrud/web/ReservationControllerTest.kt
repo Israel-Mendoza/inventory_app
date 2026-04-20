@@ -3,6 +3,7 @@ package dev.artisra.simplecrud.web
 import dev.artisra.simplecrud.domain.Product
 import dev.artisra.simplecrud.domain.Reservation
 import dev.artisra.simplecrud.domain.ReservationStatus
+import dev.artisra.simplecrud.service.ReservationCleanupTask
 import dev.artisra.simplecrud.service.ReservationService
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -30,6 +31,9 @@ class ReservationControllerTest {
 
     @MockitoBean
     private lateinit var reservationService: ReservationService
+
+    @MockitoBean
+    private lateinit var reservationCleanupTask: ReservationCleanupTask
 
     @Test
     fun `should create a reservation`() {
@@ -239,32 +243,10 @@ class ReservationControllerTest {
     }
 
     @Test
-    fun `should expire a reservation`() {
-        val reservationId = UUID.randomUUID()
-        val productId = UUID.randomUUID()
-        val userId = UUID.randomUUID()
-        val product = Product(id = productId, name = "Test Product", stock = 10)
-        val expiredReservation = Reservation(
-            id = reservationId,
-            product = product,
-            userId = userId,
-            status = ReservationStatus.EXPIRED,
-            quantity = 5
-        )
-
-        runBlocking {
-            `when`(reservationService.expireReservation(reservationId)).thenReturn(expiredReservation)
-        }
-
-        val mvcResult = mockMvc.perform(post("/api/reservations/$reservationId/expire")).andReturn()
-
-        mockMvc.perform(asyncDispatch(mvcResult))
+    fun `should trigger reservation cleanup`() {
+        mockMvc.perform(post("/api/reservations/trigger-cleanup"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.id").value(reservationId.toString()))
-            .andExpect(jsonPath("$.status").value("EXPIRED"))
 
-        runBlocking {
-            verify(reservationService).expireReservation(reservationId)
-        }
+        verify(reservationCleanupTask).cleanupExpiredReservations()
     }
 }
